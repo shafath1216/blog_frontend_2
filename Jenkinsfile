@@ -1,25 +1,24 @@
 pipeline {
     agent any
-    
+
     options {
         skipDefaultCheckout()
     }
 
     stages {
-        stage('Deploy Frontend') {
+        stage('Deploy') {
             steps {
                 script {
-                    // Just "visit" the frontend folder
+                    // Match the backend logic: use the frontend specific folder
                     dir('/opt/blog-project/blog-frontend') {
-                        
-                        // Pull frontend code
+
+                        // Pull the code
                         checkout scm
-                        
-                        // Move to parent to run compose for the specific service
-                        dir('..') {
-                            sh 'docker-compose up -d --build frontend'
-                            sh 'docker image prune -f'
-                        }
+
+                        // Run docker-compose referencing the parent directory
+                        // Target the 'frontend' service specifically
+                        sh 'docker-compose -f ../docker-compose.yml up -d --build frontend'
+                        sh 'docker image prune -f'
                     }
                 }
             }
@@ -27,7 +26,7 @@ pipeline {
     }
 
     post {
-        success { echo '🚀 Frontend is live!' }
-        failure { echo '❌ Frontend deployment failed.' }
+        success { echo '✅ Frontend Deployment complete!' }
+        failure { echo '❌ Frontend still hitting a wall. Check console output.' }
     }
 }
