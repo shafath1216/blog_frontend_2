@@ -1,23 +1,26 @@
 pipeline {
     agent any
-
+    
     options {
         skipDefaultCheckout()
     }
 
     stages {
-        stage('Deploy') {
+        stage('Deploy Frontend') {
             steps {
                 script {
-                    // Match the backend logic: use the frontend specific folder
+                    // Navigate to the frontend's specific directory
                     dir('/opt/blog-project/blog-frontend') {
-
-                        // Pull the code
+                        
+                        // 1. Force a clean checkout to avoid .git/config.lock issues
+                        sh 'git clean -fd'
                         checkout scm
-
-                        // Run docker-compose referencing the parent directory
-                        // Target the 'frontend' service specifically
-                        sh 'docker-compose -f ../docker-compose.yml up -d --build frontend'
+                        
+                        // 2. Run the build from the root context
+                        // We use the hyphenated 'docker-compose' because of the global link we made
+                        sh 'cd .. && docker-compose up -d --build frontend'
+                        
+                        // 3. Clean up dangling images to save disk space
                         sh 'docker image prune -f'
                     }
                 }
@@ -26,7 +29,7 @@ pipeline {
     }
 
     post {
-        success { echo '✅ Frontend Deployment complete!' }
-        failure { echo '❌ Frontend still hitting a wall. Check console output.' }
+        success { echo '🚀 Frontend is live!' }
+        failure { echo '💔 Frontend deployment failed. Check the logs.' }
     }
 }
